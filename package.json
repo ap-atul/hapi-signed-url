@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "A hapijs plugin to generate signed url for response objects",
   "main": "index.js",
+  "engines": {
+    "node": "14.x",
+    "npm": "6.x.x"
+  },
   "scripts": {
     "start": "npx ts-node src/index.ts",
     "pretty": "npx prettier '**/*.{json,js,ts,md}' --write",
@@ -23,5 +27,11 @@
   "bugs": {
     "url": "https://github.com/AP-Atul/hapi-signed-url/issues"
   },
-  "homepage": "https://github.com/AP-Atul/hapi-signed-url#readme"
+  "homepage": "https://github.com/AP-Atul/hapi-signed-url#readme",
+  "dependencies": {
+    "prettier": "^2.7.1",
+    "ramda": "^0.28.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.7.4"
+  }
 }
