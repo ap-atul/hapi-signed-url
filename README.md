@@ -65,6 +65,7 @@ server.route({
 ### For nested objects
 
 ```js
+// example response which needs to be updated
 {
     name: "some name",
     more: "some more data",
