@@ -1,0 +1,27 @@
+{
+  "name": "hapi-signed-url",
+  "version": "1.0.0",
+  "description": "A hapijs plugin to generate signed url for response objects",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx ts-node src/index.ts",
+    "pretty": "npx prettier '**/*.{json,js,ts,md}' --write",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AP-Atul/hapi-signed-url.git"
+  },
+  "keywords": [
+    "hapijs",
+    "hapi-plugin",
+    "s3",
+    "signed-urls"
+  ],
+  "author": "AP-Atul",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AP-Atul/hapi-signed-url/issues"
+  },
+  "homepage": "https://github.com/AP-Atul/hapi-signed-url#readme"
+}
