@@ -2,7 +2,8 @@
   "name": "hapi-signed-url",
   "version": "1.0.0",
   "description": "A hapijs plugin to generate signed url for response objects",
-  "main": "src/index.js",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "engines": {
     "node": "14.x",
     "npm": "6.x.x"
@@ -10,7 +11,9 @@
   "scripts": {
     "start": "npx ts-node src/index.ts",
     "pretty": "npx prettier '**/*.{json,js,ts,md}' --write",
-    "test": "npx mocha -p --require ts-node/register test/*.spec.ts"
+    "test": "npx mocha -p --require ts-node/register test/*.spec.ts",
+    "prebuild": "tsc",
+    "build": "npm run test"
   },
   "repository": {
     "type": "git",
