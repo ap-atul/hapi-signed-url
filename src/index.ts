@@ -1,2 +1,1 @@
-// TODO: add the plugin export
-console.log('Hello world');
+export * from './lib/plugin';
