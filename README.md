@@ -5,35 +5,41 @@ using with AWS S3 sign urls for private objects.
 
 ## Basic Usage
 
--   Register the plugin
+- Import the plugin
+
+```js
+import { signedUrl } from 'hapi-signed-url';
+```
+
+- Register the plugin
 
 ```js
 await server.register([
-    {
-        plugin: signedUrl,
-        options: {
-            getSignedUrl: (key: string): string => 'my_custom_sign', // takes in function to sign the id
-        },
+  {
+    plugin: signedUrl,
+    options: {
+      getSignedUrl: (key: string): string => 'my_custom_sign', // takes in function to sign the id
     },
+  },
 ]);
 ```
 
--   Dummy response
+- Dummy response
 
 ```json
 {
-    "file": "random_id",
-    "name": "this is a file"
+  "file": "random_id",
+  "name": "this is a file"
 }
 ```
 
--   Create a lens using ramda for the above object
+- Create a lens using ramda for the above object
 
 ```js
 const lens = R.lensProp<string, any>('file') // here file is the key from object
 ```
 
--   Use it in the route
+- Use it in the route
 
 ```js
 server.route({
@@ -53,12 +59,12 @@ server.route({
 });
 ```
 
--   Final response
+- Final response
 
 ```json
 {
-    "file": "random_id_SIGNATURE", // this value will be updated
-    "name": "this is a file"
+  "file": "random_id_SIGNATURE", // this value will be updated
+  "name": "this is a file"
 }
 ```
 
@@ -105,5 +111,5 @@ server.route({
 
 ### Note
 
--   It will work with single objects and arrays. `pathToSource` is optional field,
-    use when nested objects are to be updated.
+- It will work with single objects and arrays. `pathToSource` is optional field,
+  use when nested objects are to be updated.
