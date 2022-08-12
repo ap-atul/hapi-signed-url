@@ -1,4 +1,4 @@
-import * as _ from 'ramda';
+import { isEmpty, isNil, view, set, type } from 'ramda';
 import { RouteOptions } from './types';
 
 const isPluginActive = (request): boolean => {
@@ -10,14 +10,14 @@ const isPluginActive = (request): boolean => {
 const isResponseAbsent = (request): boolean => {
   const response = request.response;
   return (
-    response.statusCode !== 200 || _.isEmpty(response.source) || _.isNil(response.source)
+    response.statusCode !== 200 || isEmpty(response.source) || isNil(response.source)
   );
 };
 
 const getRouteOptions = (request, getSignedUrl): RouteOptions => {
   const options = request.route.settings.plugins.signedUrl;
   const source = options.pathToSource
-    ? _.view(options.pathToSource, request.response.source)
+    ? view(options.pathToSource, request.response.source)
     : request.response.source;
   return {
     ...options,
@@ -28,18 +28,18 @@ const getRouteOptions = (request, getSignedUrl): RouteOptions => {
 
 const updateSignedUrl = async (options: RouteOptions) => {
   const { source, lenses, getSignedUrl } = options;
-  const toUpdateLinks: string[] = lenses.map((lens) => _.view(lens, source));
+  const toUpdateLinks: string[] = lenses.map((lens) => view(lens, source));
   const promises = toUpdateLinks.map(async (link: string) => await getSignedUrl(link));
   const updatedLinks = await Promise.all(promises);
   const updatedSource = updatedLinks.reduce((source, link, index) => {
-    return _.set(lenses[index], link, source);
+    return view(lenses[index], source) ? set(lenses[index], link, source) : source;
   }, source);
   return updatedSource as object;
 };
 
 const processSource = async (options: RouteOptions) => {
   // single object
-  if (_.type(options.source) !== 'Array') {
+  if (type(options.source) !== 'Array') {
     return updateSignedUrl(options);
   }
 
@@ -64,7 +64,7 @@ const signUrl = (getSignedUrl) => async (request, h) => {
   const routeOptions = getRouteOptions(request, getSignedUrl);
   const updated = await processSource(routeOptions);
   const updatedSource = routeOptions.pathToSource
-    ? _.set(routeOptions.pathToSource, updated, request.response.source)
+    ? set(routeOptions.pathToSource, updated, request.response.source)
     : updated;
 
   request.response.source = updatedSource;
