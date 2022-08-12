@@ -21,6 +21,15 @@ describe('Single object', async () => {
       ...sampleFile,
     },
   };
+  const nestedLevelTwo = {
+    name: 'some name',
+    data: {
+      images: {
+        ...sampleImage,
+        ...sampleFile,
+      },
+    },
+  };
 
   const updatedSampleImage = {
     type: 'png',
@@ -38,15 +47,24 @@ describe('Single object', async () => {
       ...updatedSampleImage,
     },
   };
+  const updatedNestedLevelTwo = {
+    name: 'some name',
+    data: {
+      images: {
+        ...updatedSampleFile,
+        ...updatedSampleImage,
+      },
+    },
+  };
 
-  it('should update the key for a single value response', async () => {
+  it('should update the keys for a single value response', async () => {
     const empty = await server.inject({
       method: 'POST',
       url: '/lenses',
       payload: sampleImage,
     });
 
-    expect(empty.result).to.contains(updatedSampleImage);
+    expect(empty.result).to.eql(updatedSampleImage);
 
     const fileImage = await server.inject({
       method: 'POST',
@@ -63,7 +81,7 @@ describe('Single object', async () => {
     });
   });
 
-  it('should update the key for a array of values in response', async () => {
+  it('should update the keys for a array of values in response', async () => {
     const response = await server.inject({
       method: 'POST',
       url: '/lenses',
@@ -72,9 +90,31 @@ describe('Single object', async () => {
     const result = response.result as any[];
 
     expect(result.length).to.eql(4);
-    expect(result[0]).to.contains(updatedSampleImage);
-    expect(result[1]).to.contains(updatedSampleFile);
-    expect(result[2]).to.contains(updatedSampleImage);
-    expect(result[3]).to.contains(updatedSampleFile);
+    expect(result).to.eql([
+      updatedSampleImage,
+      updatedSampleFile,
+      updatedSampleImage,
+      updatedSampleFile,
+    ]);
+  });
+
+  it('should update the keys for a nested object in response', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/nested/level-one',
+      payload: nestedLevelOne,
+    });
+    const result = response.result;
+    expect(result).to.eql(updatedNestedLevelOne);
+  });
+
+  it('should update the keys for a nested two layers object in response', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/nested/level-two',
+      payload: nestedLevelTwo,
+    });
+    const result = response.result;
+    expect(result).to.eql(updatedNestedLevelTwo);
   });
 });
