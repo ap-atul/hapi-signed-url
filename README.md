@@ -3,6 +3,12 @@
 This plugin allows generating a signed url for a file link/id. Useful when
 using with AWS S3 sign urls for private objects.
 
+## Installation
+
+```
+npm i hapi-signed-url
+```
+
 ## Basic Usage
 
 - Import the plugin
@@ -113,3 +119,20 @@ server.route({
 
 - It will work with single objects and arrays. `pathToSource` is optional field,
   use when nested objects are to be updated.
+
+- Improvements todo
+- Change the options structure to following, which will allow using multiple paths
+
+```js
+const options = {
+  sources: [
+    {
+      lenses: [nameLens],
+    },
+    {
+      lenses: [fileLens],
+      path: docLens,
+    },
+  ],
+};
+```
