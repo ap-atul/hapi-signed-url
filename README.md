@@ -3,6 +3,10 @@
 This plugin allows generating a signed url for a file link/id. Useful when
 using with AWS S3 sign urls for private objects.
 
+## Status
+
+[![Package CI](https://github.com/AP-Atul/hapi-signed-url/actions/workflows/test_build.yml/badge.svg?branch=main)](https://github.com/AP-Atul/hapi-signed-url/actions/workflows/test_build.yml)
+
 ## Installation
 
 ```
