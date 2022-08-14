@@ -126,17 +126,7 @@ server.route({
 });
 ```
 
-The options for the Route config can also be array, the type is represented as
-
-```ts
-interface RouteOptions {
-  lenses: Lens<object, string>[];
-  pathToSource?: Lens<object, Response>;
-}
-
-// allows single option object or multiple
-const routeOptions: RouteOptions | RouteOptions[];
-```
+## For multiple nested keys
 
 Example with multiple options
 
