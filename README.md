@@ -13,6 +13,13 @@ using with AWS S3 sign urls for private objects.
 npm i hapi-signed-url
 ```
 
+## Route Options
+
+| Key          | Type                             | Description                                                                 |
+| ------------ | -------------------------------- | --------------------------------------------------------------------------- |
+| lenses       | Lens<object, string>[]           | Array of lenses, this should be `R.lensProp<string, string>(key)`           |
+| pathToSource | Lens<object, object \| object[]> | Path to the nested object, this should be `R.lensPath(['somepath', '...'])` |
+
 ## Basic Usage
 
 - Import the plugin
@@ -118,13 +125,6 @@ server.route({
     },
 });
 ```
-
-## Route Options
-
-| Key          | Type                             | Description                                                                 |
-| ------------ | -------------------------------- | --------------------------------------------------------------------------- |
-| lenses       | Lens<object, string>[]           | Array of lenses, this should be `R.lensProp<string, string>(key)`           |
-| pathToSource | Lens<object, object \| object[]> | Path to the nested object, this should be `R.lensPath(['somepath', '...'])` |
 
 The options for the Route config can also be array, the type is represented as
 
