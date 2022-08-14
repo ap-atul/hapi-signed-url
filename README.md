@@ -43,7 +43,7 @@ await server.register([
 }
 ```
 
-- Create a lens using ramda for the above object
+- Create a lens using ramda for the above object. Ramda [lenses](!https://ramdajs.com/docs/#lensProp)
 
 ```js
 const lens = R.lensProp<string, any>('file') // here file is the key from object
@@ -119,24 +119,71 @@ server.route({
 });
 ```
 
-### Note
+## Route Options
 
-- It will work with single objects and arrays. `pathToSource` is optional field,
-  use when nested objects are to be updated.
+| Key          | Type                             | Description                                                                 |
+| ------------ | -------------------------------- | --------------------------------------------------------------------------- |
+| lenses       | Lens<object, string>[]           | Array of lenses, this should be `R.lensProp<string, string>(key)`           |
+| pathToSource | Lens<object, object \| object[]> | Path to the nested object, this should be `R.lensPath(['somepath', '...'])` |
 
-- Improvements todo
-- Change the options structure to following, which will allow using multiple paths
+The options for the Route config can also be array, the type is represented as
 
-```js
-const options = {
-  sources: [
+```ts
+interface RouteOptions {
+  lenses: Lens<object, string>[];
+  pathToSource?: Lens<object, Response>;
+}
+
+// allows single option object or multiple
+const routeOptions: RouteOptions | RouteOptions[];
+```
+
+Example with multiple options
+
+```ts
+const responseObject = {
+  name: 'atul',
+  profile: '1212121', // to sign
+  projects: [
     {
-      lenses: [nameLens],
+      id: '1',
+      files: '1234', // to sign
     },
     {
-      lenses: [fileLens],
-      path: docLens,
+      id: '2',
+      files: '123232', // to sign
     },
   ],
 };
+
+// lenses for the entire object
+const profileLens = R.lensProp<string, string>('profile');
+const filesLens = R.lensProp<string, string>('files');
+
+// path for nested object
+const projectPath = R.lensPath(['projects']);
+
+// server route config
+server.route({
+    method: 'GET',
+    path: '/sample',
+    options: {
+        handler: handler.performAction,
+        plugins: {
+            signedUrl: [
+              // for profile sign
+              {
+                lenses: [profileLens],
+              },
+
+              // for files signing
+              {
+                lenses: [fileLens],
+                pathToSource: projectPath,
+              }
+            ]
+        },
+        ...
+    },
+});
 ```
