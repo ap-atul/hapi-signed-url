@@ -13,7 +13,8 @@
     "pretty": "npx prettier '**/*.{json,js,ts,md}' --write",
     "test": "npx mocha -p --require ts-node/register test/*.spec.ts",
     "prebuild": "tsc",
-    "build": "npm run test && npm publish"
+    "build": "npm run test && npm publish --dry-run",
+    "deploy": "npm run test && npm publish"
   },
   "repository": {
     "type": "git",
@@ -26,7 +27,7 @@
     "signed-urls"
   ],
   "author": "AP-Atul",
-  "license": "MIT",
+  "license": "UNLICENSE",
   "bugs": {
     "url": "https://github.com/AP-Atul/hapi-signed-url/issues"
   },
