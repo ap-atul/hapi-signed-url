@@ -1,5 +1,5 @@
-import { isEmpty, isNil, view, set, type } from 'ramda';
-import { RouteOptions } from './types';
+import { isEmpty, isNil, set, view, type } from 'ramda';
+import { PluginOptions, Response, RouteOptions } from './types';
 
 const isPluginActive = (request): boolean => {
   return (
@@ -14,46 +14,60 @@ const isResponseAbsent = (request): boolean => {
   );
 };
 
-const getRouteOptions = (request, getSignedUrl): RouteOptions => {
-  const options = request.route.settings.plugins.signedUrl;
-  const source = options.pathToSource
-    ? view(options.pathToSource, request.response.source)
-    : request.response.source;
-  return {
-    ...options,
-    source: source,
-    getSignedUrl: getSignedUrl,
-  };
+const validateRouteOptions = (options: RouteOptions | RouteOptions[]): void => {
+  if (Array.isArray(options)) {
+    options.map((option) => validateRouteOptions(option));
+  } else if (!options.lenses) {
+    throw new Error('hapi-signed-url: requires lenses in route options');
+  }
 };
 
-const updateSignedUrl = async (options: RouteOptions) => {
-  const { source, lenses, getSignedUrl } = options;
-  const toUpdateLinks: string[] = lenses.map((lens) => view(lens, source));
-  const promises = toUpdateLinks.map(async (link: string) => await getSignedUrl(link));
+const validatePluginOptions = (options: PluginOptions): void => {
+  if (type(options.getSignedUrl) !== 'Function') {
+    throw new Error('hapi-signed-url: requires getSignedUrl function while registering');
+  }
+};
+
+const getRouteOptions = (request): RouteOptions[] => {
+  const options = request.route.settings.plugins.signedUrl;
+  return Array.isArray(options) ? options : [options];
+};
+
+const updateSignedUrl = async (
+  source: object,
+  routeOptions: RouteOptions,
+  pluginOptions: PluginOptions,
+): Promise<object> => {
+  const { lenses } = routeOptions;
+  const toUpdateLinks = lenses.map((lens) => view(lens, source));
+  const promises = toUpdateLinks.map(
+    async (link) => await pluginOptions.getSignedUrl(link),
+  );
   const updatedLinks = await Promise.all(promises);
   const updatedSource = updatedLinks.reduce((source, link, index) => {
     return view(lenses[index], source) ? set(lenses[index], link, source) : source;
   }, source);
-  return updatedSource as object;
+  return updatedSource;
 };
 
-const processSource = async (options: RouteOptions) => {
+const processSource = async (
+  source: object | object[],
+  routeOptions: RouteOptions,
+  pluginOptions: PluginOptions,
+): Promise<object | object[]> => {
   // single object
-  if (type(options.source) !== 'Array') {
-    return updateSignedUrl(options);
+  if (!Array.isArray(source)) {
+    return updateSignedUrl(source, routeOptions, pluginOptions);
   }
 
   // if source is array
-  const promises = (options.source as any[]).map(async (src) => {
-    return updateSignedUrl({
-      ...options,
-      source: src,
-    });
+  const promises = source.map(async (src) => {
+    return updateSignedUrl(src, routeOptions, pluginOptions);
   });
   return Promise.all(promises);
 };
 
-const signUrl = (getSignedUrl) => async (request, h) => {
+const signUrl = (options: PluginOptions) => async (request, h) => {
   if (!isPluginActive(request)) {
     return h.continue;
   }
@@ -61,20 +75,29 @@ const signUrl = (getSignedUrl) => async (request, h) => {
     return h.continue;
   }
 
-  const routeOptions = getRouteOptions(request, getSignedUrl);
-  const updated = await processSource(routeOptions);
-  const updatedSource = routeOptions.pathToSource
-    ? set(routeOptions.pathToSource, updated, request.response.source)
-    : updated;
+  const routeOptions = getRouteOptions(request);
+  validateRouteOptions(routeOptions);
+  let toUpdateResponse = request.response.source as Response;
 
-  request.response.source = updatedSource;
+  for (const routeOption of routeOptions) {
+    const source = routeOption.pathToSource
+      ? view(routeOption.pathToSource, toUpdateResponse)
+      : toUpdateResponse;
+    const processed = await processSource(source, routeOption, options);
+    toUpdateResponse = routeOption.pathToSource
+      ? set(routeOption.pathToSource, processed, toUpdateResponse)
+      : processed;
+  }
+
+  request.response.source = toUpdateResponse;
   return h.continue;
 };
 
 export const signedUrl = {
   name: 'signedUrl',
   version: '1.0.0',
-  register: async function (server, options) {
-    server.ext('onPreResponse', signUrl(options.getSignedUrl));
+  register: (server, options: PluginOptions) => {
+    validatePluginOptions(options);
+    server.ext('onPreResponse', signUrl(options));
   },
 };
