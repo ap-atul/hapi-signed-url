@@ -77,3 +77,11 @@ export const init = async (getSignedUrl: fileSignFunction) => {
   await server.initialize();
   return server;
 };
+
+process.on('unhandledRejection', (err) => {
+  console.log(err);
+});
+
+process.on('uncaughtException', (err) => {
+  console.log(err);
+});
