@@ -78,9 +78,9 @@ server.route({
 
 - Final response
 
-```json
+```js
 {
-  "file": "random_id_SIGNATURE", // this value will be updated
+  "file": "random_id_SIGNATURE", // this value is updated
   "name": "this is a file"
 }
 ```
