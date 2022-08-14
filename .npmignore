@@ -1,7 +1,16 @@
+# git and workflows
+.github/
+.git/
+
+# original source code
 src/
 test/
+
+# modules and tools
 node_modules/
-.vscode
-dist/test
+.vscode/
 .prettier*
 tsconfig.json
+
+# js test dir
+dist/test
