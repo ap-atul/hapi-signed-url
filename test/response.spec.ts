@@ -1,120 +1,169 @@
+import * as R from 'ramda';
 import { expect } from 'chai';
+import { getAnotherObject, getSampleObject, getSignedUrl } from './env/factory';
 import { init } from './env/server';
-
-const getSignedUrl = async (key: string) => (key ? `SIGNED_${key}` : '');
+import { execPath } from 'process';
 
 describe('Single object', async () => {
-  const server = await init(getSignedUrl);
-  const sampleImage = {
-    type: 'png',
-    image: 'image_id',
-  };
-  const sampleFile = {
-    what: 'pdf',
-    name: 'sample.pdf',
-    file: 'file_id',
-  };
-  const nestedLevelOne = {
-    name: 'some name',
-    data: {
-      ...sampleImage,
-      ...sampleFile,
-    },
-  };
-  const nestedLevelTwo = {
-    name: 'some name',
-    data: {
-      images: {
-        ...sampleImage,
-        ...sampleFile,
-      },
-    },
-  };
-
-  const updatedSampleImage = {
-    type: 'png',
-    image: await getSignedUrl(sampleImage.image),
-  };
-  const updatedSampleFile = {
-    what: 'pdf',
-    name: 'sample.pdf',
-    file: await getSignedUrl(sampleFile.file),
-  };
-  const updatedNestedLevelOne = {
-    name: 'some name',
-    data: {
-      ...updatedSampleFile,
-      ...updatedSampleImage,
-    },
-  };
-  const updatedNestedLevelTwo = {
-    name: 'some name',
-    data: {
-      images: {
-        ...updatedSampleFile,
-        ...updatedSampleImage,
-      },
-    },
-  };
-
   it('should update the keys for a single value response', async () => {
-    const empty = await server.inject({
-      method: 'POST',
-      url: '/lenses',
-      payload: sampleImage,
+    const [lens, original, updated] = await getSampleObject();
+    let server = await init(getSignedUrl, {
+      lenses: [lens],
     });
-
-    expect(empty.result).to.eql(updatedSampleImage);
-
-    const fileImage = await server.inject({
+    const single = await server.inject({
       method: 'POST',
-      url: '/lenses',
+      url: '/test',
+      payload: original,
+    });
+    expect(single.result).to.eql(updated);
+  });
+
+  it('should update the keys for a multiple value response', async () => {
+    const [lens, original, updated] = await getSampleObject();
+    const [anotherLens, anotherOriginal, anotherUpdated] = await getAnotherObject();
+    const server = await init(getSignedUrl, {
+      lenses: [lens, anotherLens],
+    });
+    const multiple = await server.inject({
+      method: 'POSt',
+      url: '/test',
       payload: {
-        ...sampleFile,
-        ...sampleImage,
+        ...original,
+        ...anotherOriginal,
       },
     });
-
-    expect(fileImage.result).to.eql({
-      ...updatedSampleImage,
-      ...updatedSampleFile,
-    });
+    expect(multiple.result).to.eql({ ...anotherUpdated, ...updated });
   });
 
   it('should update the keys for a array of values in response', async () => {
+    const [lens, original, updated] = await getSampleObject();
+    const [anotherLens, anotherOriginal, anotherUpdated] = await getAnotherObject();
+    const server = await init(getSignedUrl, {
+      lenses: [lens, anotherLens],
+    });
+
     const response = await server.inject({
       method: 'POST',
-      url: '/lenses',
-      payload: [sampleImage, sampleFile, sampleImage, sampleFile],
+      url: '/test',
+      payload: [original, anotherOriginal],
     });
-    const result = response.result as any[];
+    expect(response.result).to.eql([updated, anotherUpdated]);
+  });
 
-    expect(result.length).to.eql(4);
-    expect(result).to.eql([
-      updatedSampleImage,
-      updatedSampleFile,
-      updatedSampleImage,
-      updatedSampleFile,
+  it('should update the keys for a nested single object', async () => {
+    const [lens, original, updated] = await getSampleObject();
+    const path = R.lensPath(['documents']);
+    const server = await init(getSignedUrl, {
+      lenses: [lens],
+      pathToSource: path,
+    });
+
+    const payload = {
+      name: 'test name',
+      documents: original,
+    };
+    const response = await server.inject({
+      method: 'POST',
+      url: '/test',
+      payload: payload,
+    });
+    expect(response.result).to.eql({ ...payload, documents: updated });
+  });
+
+  it('should update the keys for a nested multiple objects', async () => {
+    const [lens, original, updated] = await getSampleObject();
+    const [anotherLens, anotherOriginal, anotherUpdated] = await getAnotherObject();
+    const path = R.lensPath(['documents']);
+    const server = await init(getSignedUrl, {
+      lenses: [lens, anotherLens],
+      pathToSource: path,
+    });
+
+    const payload = {
+      name: 'test name',
+      documents: [original, anotherOriginal],
+    };
+    const response = await server.inject({
+      method: 'POST',
+      url: '/test',
+      payload: payload,
+    });
+    expect(response.result).to.eql({ ...payload, documents: [updated, anotherUpdated] });
+  });
+
+  it('should update the keys for a nested single object with multiple sources', async () => {
+    const [lens, original, updated] = await getSampleObject();
+    const path = R.lensPath(['documents']);
+    const anotherPath = R.lensPath(['other']);
+    const server = await init(getSignedUrl, [
+      {
+        lenses: [lens],
+        pathToSource: path,
+      },
+      {
+        lenses: [lens],
+        pathToSource: anotherPath,
+      },
     ]);
-  });
 
-  it('should update the keys for a nested object in response', async () => {
+    const payload = {
+      name: 'test name',
+      documents: original,
+      other: original,
+    };
     const response = await server.inject({
       method: 'POST',
-      url: '/nested/level-one',
-      payload: nestedLevelOne,
+      url: '/test',
+      payload: payload,
     });
-    const result = response.result;
-    expect(result).to.eql(updatedNestedLevelOne);
+    expect(response.result).to.eql({ ...payload, documents: updated, other: updated });
   });
 
-  it('should update the keys for a nested two layers object in response', async () => {
+  it('should update the keys for a nested multiple objects with multiple sources', async () => {
+    const [lens, original, updated] = await getSampleObject();
+    const [anotherLens, anotherOriginal, anotherUpdated] = await getAnotherObject();
+    const path = R.lensPath(['documents']);
+    const anotherPath = R.lensPath(['other']);
+    const server = await init(getSignedUrl, [
+      {
+        lenses: [lens, anotherLens],
+        pathToSource: path,
+      },
+      {
+        lenses: [lens, anotherLens],
+        pathToSource: anotherPath,
+      },
+    ]);
+
+    const payload = {
+      name: 'test name',
+      documents: [original, anotherOriginal],
+      other: [original, anotherOriginal],
+    };
     const response = await server.inject({
       method: 'POST',
-      url: '/nested/level-two',
-      payload: nestedLevelTwo,
+      url: '/test',
+      payload: payload,
     });
-    const result = response.result;
-    expect(result).to.eql(updatedNestedLevelTwo);
+    expect(response.result).to.eql({
+      ...payload,
+      documents: [updated, anotherUpdated],
+      other: [updated, anotherUpdated],
+    });
+  });
+
+  it('should update the keys for a missing key from the lenses', async () => {
+    const [lens, original, updated] = await getSampleObject();
+    const [anotherLens, anotherOriginal, anotherUpdated] = await getAnotherObject();
+    const server = await init(getSignedUrl, {
+      lenses: [lens, anotherLens], // adding another lens but not the object
+    });
+
+    const response = await server.inject({
+      method: 'POST',
+      url: '/test',
+      payload: original,
+    });
+    expect(response.result).to.eql(updated);
   });
 });

@@ -13,6 +13,13 @@ using with AWS S3 sign urls for private objects.
 npm i hapi-signed-url
 ```
 
+## Route Options
+
+| Key          | Type                             | Description                                                                 |
+| ------------ | -------------------------------- | --------------------------------------------------------------------------- |
+| lenses       | Lens<object, string>[]           | Array of lenses, this should be `R.lensProp<string, string>(key)`           |
+| pathToSource | Lens<object, object \| object[]> | Path to the nested object, this should be `R.lensPath(['somepath', '...'])` |
+
 ## Basic Usage
 
 - Import the plugin
@@ -43,7 +50,7 @@ await server.register([
 }
 ```
 
-- Create a lens using ramda for the above object
+- Create a lens using ramda for the above object. Ramda [lenses](!https://ramdajs.com/docs/#lensProp)
 
 ```js
 const lens = R.lensProp<string, any>('file') // here file is the key from object
@@ -71,9 +78,9 @@ server.route({
 
 - Final response
 
-```json
+```js
 {
-  "file": "random_id_SIGNATURE", // this value will be updated
+  "file": "random_id_SIGNATURE", // this value is updated
   "name": "this is a file"
 }
 ```
@@ -119,24 +126,54 @@ server.route({
 });
 ```
 
-### Note
+## For multiple nested keys
 
-- It will work with single objects and arrays. `pathToSource` is optional field,
-  use when nested objects are to be updated.
+Example with multiple options
 
-- Improvements todo
-- Change the options structure to following, which will allow using multiple paths
-
-```js
-const options = {
-  sources: [
+```ts
+const responseObject = {
+  name: 'atul',
+  profile: '1212121', // to sign
+  projects: [
     {
-      lenses: [nameLens],
+      id: '1',
+      files: '1234', // to sign
     },
     {
-      lenses: [fileLens],
-      path: docLens,
+      id: '2',
+      files: '123232', // to sign
     },
   ],
 };
+
+// lenses for the entire object
+const profileLens = R.lensProp<string, string>('profile');
+const filesLens = R.lensProp<string, string>('files');
+
+// path for nested object
+const projectPath = R.lensPath(['projects']);
+
+// server route config
+server.route({
+    method: 'GET',
+    path: '/sample',
+    options: {
+        handler: handler.performAction,
+        plugins: {
+            signedUrl: [
+              // for profile sign
+              {
+                lenses: [profileLens],
+              },
+
+              // for files signing
+              {
+                lenses: [fileLens],
+                pathToSource: projectPath,
+              }
+            ]
+        },
+        ...
+    },
+});
 ```
