@@ -35,7 +35,8 @@ await server.register([
   {
     plugin: signedUrl,
     options: {
-      getSignedUrl: (key: string): string => 'my_custom_sign', // takes in function to sign the id
+     // takes in function to sign the id
+      getSignedUrl: (key: string): string => 'my_custom_sign',
     },
   },
 ]);
@@ -53,7 +54,8 @@ await server.register([
 - Create a lens using ramda for the above object. Ramda [lenses](!https://ramdajs.com/docs/#lensProp)
 
 ```js
-const lens = R.lensProp<string, any>('file') // here file is the key from object
+// here file is the key from object
+const lens = R.lensProp<string, any>('file') 
 ```
 
 - Use it in the route
